@@ -1,4 +1,4 @@
-package com.example.vaxometer
+package com.dell.vaxinator
 
 import io.flutter.embedding.android.FlutterActivity
 
