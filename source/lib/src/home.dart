@@ -24,7 +24,7 @@ class _HomeState extends State<Home> {
   Future<List<VaccineCentre>> _getVaccineCentre() async {
     _pinCode = await GeoFinder.getPinCodeByMyLoction();
     _pinCode = "560017";
-    var response = await HttpService.get<dynamic>("https://vaxometer.azurewebsites.net/api/v1/Vaxometer/Centers/pincode/" + _pinCode );
+    var response = await HttpService.get<dynamic>("https://vaxometerindia.azurewebsites.net/api/v1/Vaxometer/Centers/pincode/" + _pinCode );
     var vaccCentres = List.generate(response.length,
         (i) => VaccineCentre.fromJson(response[i]));
     return vaccCentres;
@@ -75,7 +75,7 @@ class _HomeState extends State<Home> {
   }
   
   bool isAge45 = true;
-
+  var filters = [true, true, true, true];
    Widget buildBar(BuildContext context) {
     return new AppBar(
         leadingWidth: 35.0,
@@ -84,47 +84,30 @@ class _HomeState extends State<Home> {
           }),
         
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(45.0),
+          preferredSize: Size.fromHeight(35.0),
           child: Container(
-            height: 45.0,
-            padding: EdgeInsets.symmetric(vertical: 0.0),
+            height: 35.0,
+            padding: EdgeInsets.symmetric(vertical: 2.0),
             color: Colors.white30,
-            child: Wrap(
-                
-                direction: Axis.horizontal,
+            child: ToggleButtons(
+                borderColor: Colors.blueGrey,
+                fillColor: Colors.white,
+                borderRadius: BorderRadius.circular(2.0),
+                selectedBorderColor: Colors.blue,
+                color: Colors.blueGrey,
                 children: <Widget>[
-                  
-                ListTileTheme(
-                  horizontalTitleGap: 0.0,
-                  style: ListTileStyle.list,
-                  dense: true,
-            contentPadding: EdgeInsets.zero,
-            child: CheckboxListTile(
-                  title: Text("45+"),
-                  value: isAge45,
-                  contentPadding: EdgeInsets.zero,
-                  onChanged: (bool value) {
-                    
-                  },
-                  controlAffinity: ListTileControlAffinity.leading, //  <-- leading Checkbox
-                )),
-                ListTileTheme(
-                  horizontalTitleGap: 0.0,
-                  style: ListTileStyle.list,
-                  dense: true,
-            contentPadding: EdgeInsets.zero,
-            child: CheckboxListTile(
-                  title: Text("18+"),
-                  value: isAge45,
-                  contentPadding: EdgeInsets.zero,
-                  onChanged: (bool value) {
-                    
-                  },
-                  controlAffinity: ListTileControlAffinity.leading, //  <-- leading Checkbox
-                )),
-                
-              ],
-            )
+                  Container(width: (MediaQuery.of(context).size.width - 5)/4, child:Text("18+", textAlign: TextAlign.center)),
+                  Container(width: (MediaQuery.of(context).size.width - 5)/4, child:Text("45+", textAlign: TextAlign.center)),
+                  Container(width: (MediaQuery.of(context).size.width - 5)/4, child:Text("Free", textAlign: TextAlign.center)),
+                  Container(width: (MediaQuery.of(context).size.width - 5)/4, child:Text("Paid", textAlign: TextAlign.center))
+                ],
+                onPressed: (int index) {
+                  setState(() {
+                    filters[index] = !filters[index];
+                  });
+                },
+                isSelected: filters
+              )
           ),
         ),
         title: Container(

@@ -56,10 +56,23 @@ class SlotTile extends StatelessWidget {
                 width: 120.0,
                 color: Colors.lightGreen,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(_vaccineCentre.getSlots().toString())
+                    Text(_vaccineCentre.getSlots().toString()),
+                    Container(
+                    height: 20.0,
+                    child: ElevatedButton(
+                      clipBehavior: Clip.hardEdge,
+                      style: ElevatedButton.styleFrom(
+                        textStyle: TextStyle(fontSize: 11.0),
+                        padding: EdgeInsets.all(0.0),
+                        primary: Colors.red, // background
+                        onPrimary: Colors.white, // foreground
+                      ),
+                      onPressed: () { },
+                      child: Text(_vaccineCentre.getSlots() > 0 ? 'Book': 'Notify Me' ),
+                    ))
                   ],
                 ) 
               )
