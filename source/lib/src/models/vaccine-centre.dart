@@ -17,11 +17,6 @@ class VaccineCentre {
   final int pinCode;
   final List<VaccineFee> vaccine_fees;
   final List<VaccineSession> sessions;
-  // final String vaccineFee;
-  // final bool isCovaxinAvailable;
-  // final bool is18StartedHere;
-  // final bool isSlotAvailableFor18plus;
-  // final bool isSlotAvailableFor45plus;
 
   VaccineCentre(this.center_id, this.name, this.address, this.block_name, this.district_name,
                  this.state_name, this.fee_type, this.from, this.to, this.lat, this.long,
@@ -45,7 +40,12 @@ class VaccineCentre {
 
   int getSlots() {
     if (sessions == null) return 0;
-    return sessions[0].available_capacity;
+    return sessions.fold(0, (preValue, element) => preValue + element.available_capacity);
+  }
+
+  String getNextSlotOn() {
+    if (sessions == null || sessions.length == 0) return "Nil";
+    return sessions[0].date;
   }
 
   // Map<String, dynamic> toMap() => {
