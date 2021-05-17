@@ -6,8 +6,8 @@ import 'package:http/http.dart' as http;
 class HttpService {
   static String _baseUrl = "";
   static Map<String, String> _headers = {
-    // "Authorization": "Api-Key 3751f40cb69dbbca4d9950fef6e034db34319be66a8efc8a4e14a5a043538610",
-    // "Content-Type": "application/json"
+    "x-api-key": "3e105a18a1f64eadaab010c9d630fb26",
+    "Content-Type": "application/json"
   };
   
   static Future<T> get<T>(String route) async {
@@ -17,7 +17,7 @@ class HttpService {
       T body = jsonDecode(res.body);
       return body;
     } else {
-      throw "Can't get $_baseUrl$route";
+      throw "Unable to process your request";
     }
   }
 
@@ -27,10 +27,10 @@ class HttpService {
                   body: jsonEncode(body));
 
     if (res.statusCode == 200) {
-      T body = jsonDecode(res.body);
-      return body;
+      T resBody = jsonDecode(res.body);
+      return resBody;
     } else {
-      throw "Can't post $_baseUrl$route";
+      throw "Unable to process your request";
     }
   }
 
@@ -43,7 +43,7 @@ class HttpService {
       T body = jsonDecode(res.body);
       return body;
     } else {
-      throw "Can't put $_baseUrl$route";
+      throw "Unable to process your request";
     }
   }
 
@@ -55,7 +55,7 @@ class HttpService {
       T body = jsonDecode(res.body);
       return body;
     } else {
-      throw "Can't delete $_baseUrl$route";
+      throw "Unable to process your request";
     }
   }
 }

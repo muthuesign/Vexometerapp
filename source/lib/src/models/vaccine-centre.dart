@@ -17,10 +17,11 @@ class VaccineCentre {
   final int pinCode;
   final List<VaccineFee> vaccine_fees;
   final List<VaccineSession> sessions;
+  bool isSubcribed;
 
   VaccineCentre(this.center_id, this.name, this.address, this.block_name, this.district_name,
                  this.state_name, this.fee_type, this.from, this.to, this.lat, this.long,
-                  this.pinCode, this.vaccine_fees, this.sessions);
+                  this.pinCode, this.vaccine_fees, this.sessions, this.isSubcribed);
 
   VaccineCentre.fromJson(Map<String, dynamic> json)
       : center_id = json["center_id"],
@@ -36,7 +37,8 @@ class VaccineCentre {
         long = json["long"],
         pinCode = json["pinCode"],
         vaccine_fees = json["vaccine_fees"] != null ? List.from(json["vaccine_fees"]).map((e) => VaccineFee.fromJson(e)).toList() : null,
-        sessions = json["sessions"] != null ? List.from(json["sessions"]).map((e) => VaccineSession.fromJson(e)).toList() : null;
+        sessions = json["sessions"] != null ? List.from(json["sessions"]).map((e) => VaccineSession.fromJson(e)).toList() : null,
+        isSubcribed = json["isSubcribed"] ?? false;
 
   int getSlots() {
     if (sessions == null) return 0;

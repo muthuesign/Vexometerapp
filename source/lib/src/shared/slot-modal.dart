@@ -24,7 +24,7 @@ class _SlotModalState extends State<SlotModal> {
   Widget build(BuildContext context) {
     
     return AlertDialog(
-      contentPadding: EdgeInsets.symmetric(vertical: 10.0),
+      contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 2.0),
       content: Stack(
         overflow: Overflow.visible,
         children: <Widget>[
@@ -51,15 +51,19 @@ class _SlotModalState extends State<SlotModal> {
               itemBuilder: (context, index) {
                 if (index == 0)
                 {
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(padding: EdgeInsets.all(2.0), width: 80.0, child:Text("Date", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0))),
-                      Container(padding: EdgeInsets.all(2.0), width: 40.0, child:Text("Age", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0))),
-                      Container(padding: EdgeInsets.all(2.0), width: 80.0, child:Text("Vaccine", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0))),
-                      Container(padding: EdgeInsets.all(2.0), width: 50.0, child:Text("Slots", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0)))
-                    ],
+                  return Container(
+                    color: Colors.blue[100],
+                    height: 30,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(padding: EdgeInsets.all(2.0), width: 75.0, child:Text("Date", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0))),
+                        Container(padding: EdgeInsets.all(2.0), width: 35.0, child:Text("Age", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0))),
+                        Container(padding: EdgeInsets.all(2.0), width: 80.0, child:Text("Vaccine", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0))),
+                        Container(padding: EdgeInsets.all(2.0), width: 40.0, child:Text("Slots", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0)))
+                      ],
+                    )
                   );
                 }
                 index -= 1;
@@ -68,10 +72,10 @@ class _SlotModalState extends State<SlotModal> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Container(padding: EdgeInsets.all(2.0), width: 80.0, child:Text(_sessions[index].date, style: TextStyle(fontSize: 12.0))),
-                      Container(padding: EdgeInsets.all(2.0), width: 40.0, child:Text(_sessions[index].min_age_limit.toString(), style: TextStyle(fontSize: 12.0))),
+                      Container(padding: EdgeInsets.all(2.0), width: 75.0, child:Text(_sessions[index].date, style: TextStyle(fontSize: 12.0))),
+                      Container(padding: EdgeInsets.all(2.0), width: 35.0, child:Text(_sessions[index].min_age_limit.toString(), style: TextStyle(fontSize: 12.0))),
                       Container(padding: EdgeInsets.all(2.0), width: 80.0, child:Text(_sessions[index].vaccine, style: TextStyle(fontSize: 12.0))),
-                      Container(padding: EdgeInsets.all(2.0), width: 50.0, child:Text(_sessions[index].available_capacity.toString(), style: TextStyle(fontSize: 12.0)))
+                      Container(padding: EdgeInsets.all(2.0), width: 40.0, child:Text(_sessions[index].available_capacity.toString(), textAlign: TextAlign.right, style: TextStyle(fontSize: 12.0)))
                     ],
                   );
                 },

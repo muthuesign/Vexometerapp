@@ -1,7 +1,13 @@
+import 'dart:io';
 
+import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
+import 'package:toast/toast.dart';
+import 'package:vaxometer/src/globals.dart' as globals;
+import 'package:vaxometer/src/models/vaccine-session.dart';
+import 'package:vaxometer/src/shared/loader.dart';
 import 'package:vaxometer/src/shared/services/geo-finder.dart';
-import 'package:vaxometer/src/shared/services/http-service.dart';
+import 'package:vaxometer/src/shared/services/vaxometer-service.dart';
 import './shared/slot-tile.dart';
 import 'models/vaccine-centre.dart';
 
@@ -13,69 +19,124 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  Future<List<VaccineCentre>> _vaccineCentres;
-  String _pinCode;
-  var _vacCentrefilters = [true, true, true, true];
-
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  String _deviceId;
+  TextEditingController _searchController = new TextEditingController();
+  VaxometerService _vaxometerService = new VaxometerService();
+  Future<List<VaccineCentre>> _futureVaccineCentres;
+  List<VaccineCentre> _vaccineCentres;
+  List<VaccineCentre> _filteredVaccineCentres;
+  String _pinCode = "";
+  var _vacCentrefilters = [true, true, true, true, true];
+  //var _vacTypes = [ "Covishield", "Covaxin", "Sputnik V"];
+  //var _vacTypesFilter = List.generate(3, (index) => true);
+  Map<String, bool> _vaccineTypes = {"Covishield": true, "Covaxin": true, "Sputnik V": true};
+  
   @override
   void initState() {
     super.initState();
+
+    _searchController.addListener(() {
+      setState(() {});
+    });
+
+    _futureVaccineCentres = _getVaccineCentre();
   }
 
   Future<List<VaccineCentre>> _getVaccineCentre() async {
-    _pinCode = await GeoFinder.getPinCodeByMyLoction();
-    _pinCode = "560017";
-    var response = await HttpService.get<dynamic>("https://vaxometerindia.azurewebsites.net/api/v1/Vaxometer/Centers/pincode/" + _pinCode );
-    var vaccCentres = List.generate(response.length,
-        (i) => VaccineCentre.fromJson(response[i]));
-
-    // vaccCentres = vaccCentres.where((ele) => 
-    //   (!_vacCentrefilters[0] || (ele.sessions != null && ele.sessions.any((a) => a.min_age_limit <= 18))) 
-    //   && (!_vacCentrefilters[1] || (ele.sessions != null && ele.sessions.any((a) => a.min_age_limit <= 45))) 
-    //   && (!_vacCentrefilters[2] || ele.fee_type == 'Free')
-    //   &&  (!_vacCentrefilters[3] || ele.fee_type == 'Paid')
-    // );
-
+    _pinCode = _searchController.text.isEmpty ? await GeoFinder.getPinCodeByMyLoction(): _searchController.text;
+    var vaccCentres = await _vaxometerService.getCentresByPin(globals.onesignalUserId, _pinCode);
+    Loader.close(context);
     return vaccCentres;
   }
 
-  ListView _vaccineCentreListView(data) {
+  bool _ageFilter(VaccineSession vs) {
+    if (_vacCentrefilters[0] && !_vacCentrefilters[1])
+      return vs.min_age_limit == 18;
+    else if (!_vacCentrefilters[0] && _vacCentrefilters[1])
+      return vs.min_age_limit == 45;
+    
+    return true;
+  }
+
+  bool _feeTypeFilter(String feeType) {
+    if (_vacCentrefilters[2] && !_vacCentrefilters[3])
+      return feeType == 'Free';
+    else if (!_vacCentrefilters[2] && _vacCentrefilters[3])
+      return feeType == 'Paid';
+    
+    return true;
+  }
+
+  bool _vacTypeFilter(VaccineSession vs) {
+    var vacTypes = [];
+    _vaccineTypes.forEach((key, value) {
+      if (value)
+        vacTypes.add(key.toLowerCase());
+     });
+      
+    return vacTypes.contains(vs.vaccine.toLowerCase());
+  }
+
+  void applyFilter() {
+      _filteredVaccineCentres = _vaccineCentres.where((ele) => 
+        (ele.sessions != null && ele.sessions.any((a) => _ageFilter(a))) 
+        && _feeTypeFilter(ele.fee_type)
+        && (ele.sessions != null && ele.sessions.any((a) => _vacTypeFilter(a))) ).toList();
+      _filteredVaccineCentres.sort((a, b) => a.getSlots().compareTo(b.getSlots()));
+  }
+
+  ListView _vaccineCentreListView() {
     return ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: data.length,
+        itemCount: _filteredVaccineCentres.length,
         shrinkWrap: true,
         itemBuilder: (context, index) {
-          return SlotTile(data[index], callBack: (int index) async {
-            await _pullRefresh();
+          return SlotTile(_filteredVaccineCentres[index], callBack: (int centreId, bool isSubscribe) async {
+            Loader.show(context);
+            await followCentre(centreId, isSubscribe);
+            Loader.close(context);
+            Toast.show(isSubscribe ? "Subscribed": "Un Subscribed", context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
+            _pullRefresh().then((value) => {
+              setState(() {})
+            });
           });
         });
   }
 
   Future<void> _pullRefresh() async {
-    _vaccineCentres = Future.value(_getVaccineCentre());
+    _futureVaccineCentres = Future.value(_getVaccineCentre());
+  }
+
+  Future<void> followCentre(int centreId, bool isSubscribe) async {
+    await _vaxometerService.followCentre(globals.onesignalUserId, centreId, isSubscribe);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        key: _scaffoldKey,
         appBar: buildBar(context),
         body: FutureBuilder<List<VaccineCentre>>(
-              future: _getVaccineCentre(),
+              future: _futureVaccineCentres,
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data.isNotEmpty) {
-                  List<VaccineCentre> data = snapshot.data;
+                  _vaccineCentres = snapshot.data;
+                  _filteredVaccineCentres = _filteredVaccineCentres ?? _vaccineCentres;
                   return RefreshIndicator(
-                      child: _vaccineCentreListView(data),
+                      child: _vaccineCentreListView(),
                       onRefresh: () =>
                           _pullRefresh());
                 } else if (snapshot.hasError) {
-                  return Text("${snapshot.error}");
+                  return Align(
+                      alignment: Alignment.center,
+                      child: Text("${snapshot.error}",
+                        textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)));
                 } else {
-                  return Padding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 20.0, vertical: 100.0),
+                  return Align(
+                      alignment: Alignment.center,
                       child: Text("No records found " + _pinCode,
-                        textAlign: TextAlign.center,
+                        textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)
                       ));
                 }
               },
@@ -83,6 +144,27 @@ class _HomeState extends State<Home> {
     );
   }
   
+  void _showPopupMenu(Offset offset) async {
+    double left = offset.dx;
+    double top = offset.dy;
+    await showMenu(
+      context: context,
+      color: Colors.blue[50],
+      position: RelativeRect.fromLTRB(left, top, left+1, top+1),
+      items: List.generate(_vaccineTypes.length, (index) => PopupMenuItem<bool>(
+            child: StatefulBuilder(builder:
+                  (BuildContext context, StateSetter setState) {
+                    return CheckboxListTile(dense: true, selected: _vaccineTypes[_vaccineTypes.keys.elementAt(index)], contentPadding: EdgeInsets.all(0.0), 
+            value: _vaccineTypes[_vaccineTypes.keys.elementAt(index)], onChanged: (bool value) {
+              setState(() {
+                _vaccineTypes[_vaccineTypes.keys.elementAt(index)] = value;
+                applyFilter();
+              });
+            }, title: Text(_vaccineTypes.keys.elementAt(index)), 
+            controlAffinity: ListTileControlAffinity.leading);}))),
+      elevation: 0.0,
+  );
+}
   
   Widget buildBar(BuildContext context) {
     return new AppBar(
@@ -90,7 +172,7 @@ class _HomeState extends State<Home> {
       flexibleSpace: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color.fromRGBO(55, 167, 148, 1), Color.fromRGBO(181, 220, 202, 1)],
+                colors: [Colors.blue, Colors.blue[300]],
               ),
             ),
           ),
@@ -102,23 +184,29 @@ class _HomeState extends State<Home> {
         preferredSize: Size.fromHeight(35.0),
         child: Container(
           height: 35.0,
-          padding: EdgeInsets.symmetric(vertical: 2.0),
+          padding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 2.0),
           color: Colors.white30,
           child: ToggleButtons(
-              borderColor: Colors.blueGrey,
+              borderColor: Colors.white30,
               fillColor: Colors.white,
-              borderRadius: BorderRadius.circular(2.0),
+              borderRadius: BorderRadius.circular(6.0),
               selectedBorderColor: Colors.blue,
               color: Colors.blueGrey,
               children: <Widget>[
-                Container(width: (MediaQuery.of(context).size.width - 5)/4, child:Text("18+", textAlign: TextAlign.center)),
-                Container(width: (MediaQuery.of(context).size.width - 5)/4, child:Text("45+", textAlign: TextAlign.center)),
-                Container(width: (MediaQuery.of(context).size.width - 5)/4, child:Text("Free", textAlign: TextAlign.center)),
-                Container(width: (MediaQuery.of(context).size.width - 5)/4, child:Text("Paid", textAlign: TextAlign.center))
+                Container(width: (MediaQuery.of(context).size.width - 9)/5, child:Text("18+", textAlign: TextAlign.center)),
+                Container(width: (MediaQuery.of(context).size.width - 9)/5, child:Text("45+", textAlign: TextAlign.center)),
+                Container(width: (MediaQuery.of(context).size.width - 9)/5, child:Text("Free", textAlign: TextAlign.center)),
+                Container(width: (MediaQuery.of(context).size.width - 9)/5, child:Text("Paid", textAlign: TextAlign.center)),
+                Container(width: (MediaQuery.of(context).size.width - 9)/5.1, child:GestureDetector(
+                      onTapDown: (TapDownDetails details) {
+                        _showPopupMenu(details.globalPosition);
+                      },
+                      child: Icon(Icons.filter_alt)))
               ],
               onPressed: (int index) {
                 setState(() {
                   _vacCentrefilters[index] = !_vacCentrefilters[index];
+                  applyFilter();
                 });
               },
               isSelected: _vacCentrefilters
@@ -126,23 +214,53 @@ class _HomeState extends State<Home> {
         ),
       ),
       title: Container(
-        height: 25.0,
+        height: 36.0,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.5),
+            width: 1.0,
+          ),
+          borderRadius: BorderRadius.circular(4.0),
+        ),
         child: TextField(
+          controller: _searchController,
+          style: TextStyle(
+            fontSize: 14.0,
+            color: Colors.black,
+          ),
           decoration: InputDecoration(
-            hintStyle: TextStyle(color: Colors.white24),
-            contentPadding: EdgeInsets.all(5.0),
+            fillColor: Colors.yellow,
+            border: InputBorder.none,
+            contentPadding:
+                EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+            isDense: true,
+            suffixIcon: _searchController.text.isNotEmpty ? new IconButton(iconSize: 20.0, icon: new Icon(Icons.cancel), onPressed: () {
+              _searchController.clear();
+            }): null,
+            hintStyle: TextStyle(color: Colors.grey),
             hintText: 'Search center',
-            isDense: true
           ),
         ),
       ),
       actions: <Widget>[
-        new IconButton(iconSize: 20.0, icon: Icon(Icons.search, color: Colors.black), onPressed: () {
-          
-        })//,
-        // new IconButton(iconSize: 20.0, icon: Icon(Icons.filter_alt_outlined, color: Colors.white), onPressed: () {
-          
-        // },)
+        Container(
+          margin: EdgeInsets.only(top: 10.0, bottom: 10.0, right: 15.0),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                        textStyle: TextStyle(fontSize: 11.0),
+                        padding: EdgeInsets.all(0.0),
+                        primary: Colors.blue[700], // background
+                        onPrimary: Colors.white, // foreground
+                      ),
+	        child: Icon(Icons.search, color: Colors.white),
+	          onPressed: () async {
+              Loader.show(context);
+              await _pullRefresh();
+              setState((){});
+            },
+          ),
+        )
       ]
     );
   }
