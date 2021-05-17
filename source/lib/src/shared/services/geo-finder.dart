@@ -26,13 +26,18 @@ class GeoFinder {
 
   static Future<String> getPinCodeByMyLoction() async {
     try {
-      var pos = await getCurrentLocation();
-      
-      Placemark place = await getAddressFromLatLng(pos);
-      return place.postalCode;
+      var canGps = await Geolocator.isLocationServiceEnabled();
+        if (canGps) {
+        var pos = await getCurrentLocation();
+        
+        Placemark place = await getAddressFromLatLng(pos);
+        return place.postalCode;
+      } else {
+        return "560017";
+      }
     } catch (ex) {
       print(ex);
-      return ex.toString();
+      return "or Unable to get your location";
     }
   }
 }

@@ -1,10 +1,7 @@
-import 'dart:io';
-
-import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:vaxometer/src/home.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
-
+import 'package:vaxometer/src/globals.dart' as globals;
 
 
 void main() {
@@ -46,7 +43,7 @@ class _MyAppState  extends State<MyApp>  {
 //    OneSignal.shared.setExternalUserId(myCustomUniqueUserId);
 
     var status = await OneSignal.shared.getPermissionSubscriptionState();
-    String onesignalUserId = status.subscriptionStatus.userId; // Store this in MongoDB
+    globals.onesignalUserId = status.subscriptionStatus.userId; // Store this in MongoDB
 
     OneSignal.shared.setInFocusDisplayType(OSNotificationDisplayType.notification);
     await OneSignal.shared.promptUserForPushNotificationPermission(fallbackToSettings: true);
@@ -137,16 +134,7 @@ class _MyAppState  extends State<MyApp>  {
 
   }
 
-  Future<String> _getId() async {
-    var deviceInfo = DeviceInfoPlugin();
-    if (Platform.isIOS) { // import 'dart:io'
-      var iosDeviceInfo = await deviceInfo.iosInfo;
-      return iosDeviceInfo.identifierForVendor; // unique ID on iOS
-    } else {
-      var androidDeviceInfo = await deviceInfo.androidInfo;
-      return androidDeviceInfo.androidId; // unique ID on Android
-    }
-  }
+  
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

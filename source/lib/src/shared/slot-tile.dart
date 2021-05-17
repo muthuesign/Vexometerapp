@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:toast/toast.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:vaxometer/src/models/vaccine-centre.dart';
 import 'package:vaxometer/src/shared/slot-modal.dart';
 
 class SlotTile extends StatelessWidget {
   final VaccineCentre _vaccineCentre;
-  final Future<void> Function(int index) callBack;
+  final Future<void> Function(int centreId, bool isSubscribe) callBack;
 
   SlotTile(this._vaccineCentre, {this.callBack});
 
@@ -17,7 +19,7 @@ class SlotTile extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: [Color.fromRGBO(181, 220, 202, 1), Color.fromRGBO(182, 224, 208, 1)])
+          colors: [Colors.blue[100], Colors.blue[50]])
       ),
       child: Card(
         color: Colors.white,
@@ -78,15 +80,33 @@ class SlotTile extends StatelessWidget {
                 padding: EdgeInsets.only(bottom: 10.0, top: 15.0),
                 decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.white70, Color.fromRGBO(99, 189, 154, 1)],
+                  colors: [Colors.blue[100], Colors.blue[100]],
                 ),
               ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    // InkResponse(
+                    //   onTap: () async {
+                    //     await showDialog(
+                    //       context: context,
+                    //       builder: (context) =>
+                    //           SlotModal(
+                    //               _vaccineCentre.sessions),
+                    //     ).then((val) {
+                          
+                    //     });
+                    //   },
+                    //   child: CircleAvatar(
+                    //     child: Text(_vaccineCentre.getSlots().toString(), style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue)),
+                    //     foregroundColor: Colors.white,
+                    //     backgroundColor: Colors.white,
+                    //   ),
+                    // ),
+
                     GestureDetector(
-                      child: Text(_vaccineCentre.getSlots().toString(), style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue)),
+                      child: Text(_vaccineCentre.getSlots().toString() + ' slots', style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue)),
                       onTap: () async {
                         await showDialog(
                           context: context,
@@ -105,17 +125,22 @@ class SlotTile extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         textStyle: TextStyle(fontSize: 11.0),
                         padding: EdgeInsets.all(0.0),
-                        primary: Colors.red, // background
+                        primary: Colors.blue[700], // background
                         onPrimary: Colors.white, // foreground
                       ),
-                      onPressed: () { 
+                      onPressed: () async { 
                         if (_vaccineCentre.getSlots() > 0) {
-                          //Book
+                          //Book 
+                          var bookUrl = "https://selfregistration.cowin.gov.in/";
+                          await canLaunch(bookUrl) ? await launch(bookUrl) : 
+                              Toast.show("Unable to redirect to book", context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
                         } else {
                           //Notify call
+                          _vaccineCentre.isSubcribed = !_vaccineCentre.isSubcribed;
+                          await callBack(_vaccineCentre.center_id, _vaccineCentre.isSubcribed);
                         }
                       },
-                      child: Text(_vaccineCentre.getSlots() > 0 ? 'Book': 'Notify Me' ),
+                      child: Text(_vaccineCentre.getSlots() > 0 ? 'Book Now': (!_vaccineCentre.isSubcribed ? 'Notify Me': "Unsubscribe")),
                     ))
                   ],
                 ) 
