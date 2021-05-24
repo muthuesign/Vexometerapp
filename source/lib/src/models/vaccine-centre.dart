@@ -163,4 +163,7 @@ class CentersViewModel {
     return sessions[0].date;
   }
 
+  int getInitialSlots() {
+    return totalAvailableCapacityDose1 + totalAvailableCapacityDose2;
+  }
 }
