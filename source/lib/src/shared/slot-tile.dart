@@ -8,7 +8,7 @@ class SlotTile extends StatelessWidget {
   final CentersViewModel _vaccineCentre;
    Map<String, bool> _vaccineTypes;
    Map<String, bool> ageFilter;
-  Map<String, String> _nextAvailableslots = {};
+  Map<String, String> _nextAvailableslots = {"Dose" : "-"};
   final Future<void> Function(int centreId, bool isSubscribe) callBack;
 
   SlotTile(this._vaccineCentre,this._vaccineTypes,this.ageFilter, {this.callBack});
@@ -70,7 +70,7 @@ class SlotTile extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(_vaccineCentre.fee_type, style: TextStyle(fontSize: 13.0, color: Colors.orange)),
-                          Text("Next Slot on: " + _vaccineCentre.getNextSlotOn(), style: TextStyle(fontSize: 13.0, color: Colors.green)),
+                          Text("Next Slot on: " + _nextAvailableslots["Dose"], style: TextStyle(fontSize: 13.0, color: Colors.green)),
                         ]
                       )
                     ),
@@ -110,6 +110,7 @@ class SlotTile extends StatelessWidget {
 
                     GestureDetector(
                       child: Text(getSlots().toString() + ' slots', style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue)),
+                      //   child: Text(_vaccineCentre.getSlots().toString() + ' slots', style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue)),
                       onTap: () async {
                         await showDialog(
                           context: context,
@@ -153,29 +154,117 @@ class SlotTile extends StatelessWidget {
         ),
     );
   }
-  int getSlots(){
+  int getSlots() {
+    if (ageFilter["age18"] && ageFilter["age45"] && _vaccineTypes["Dose 1"] &&
+        _vaccineTypes["Dose 2"]) {
+      // _nextAvailableslots["Dose 1"] = _vaccineCentre.nextAvailableSlot_Dose1;
+      // _nextAvailableslots["Dose 2"] = _vaccineCentre.nextAvailableSlot_Dose2;
+      if (_vaccineCentre.nextAvailableSlot_Dose1 != null &&
+          _vaccineCentre.nextAvailableSlot_Dose2 != null)
+        _nextAvailableslots["Dose"] =
+            (_vaccineCentre.nextAvailableSlot_Dose1.compareTo(
+                _vaccineCentre.nextAvailableSlot_Dose2) > 0 ? _vaccineCentre
+                .nextAvailableSlot_Dose2 : _vaccineCentre
+                .nextAvailableSlot_Dose1).toString();
+      else
+        _nextAvailableslots["Dose"] =
+            ((_vaccineCentre.nextAvailableSlot_Dose1 ??
+                _vaccineCentre.nextAvailableSlot_Dose2) ?? "-").toString();
+      return _vaccineCentre.getSlots();
+    }
+    if (ageFilter["age18"] && ageFilter["age45"] && _vaccineTypes["Dose 1"] &&
+        !_vaccineTypes["Dose 2"]) {
+      // _nextAvailableslots["Dose 1"] = _vaccineCentre.nextAvailableSlot_Dose1;
+      // _nextAvailableslots["Dose 2"] = _vaccineCentre.nextAvailableSlot_Dose2;
+      if (_vaccineCentre.nextAvailableSlot18_Dose1 != null &&
+          _vaccineCentre.nextAvailableSlot45_Dose1 != null)
+        _nextAvailableslots["Dose"] =
+            (_vaccineCentre.nextAvailableSlot18_Dose1.compareTo(
+                _vaccineCentre.nextAvailableSlot45_Dose1) > 0 ? _vaccineCentre
+                .nextAvailableSlot45_Dose1 : _vaccineCentre
+                .nextAvailableSlot18_Dose1).toString();
+      else
+        _nextAvailableslots["Dose"] =
+            ((_vaccineCentre.nextAvailableSlot18_Dose1 ??
+                _vaccineCentre.nextAvailableSlot45_Dose1) ?? "-").toString();
+      return _vaccineCentre.totalAvailableCapacityDose1_18 ??
+          0 + _vaccineCentre.totalAvailableCapacityDose1_45 ?? 0;
+    }
+    if (ageFilter["age18"] && ageFilter["age45"] && !_vaccineTypes["Dose 1"] &&
+        _vaccineTypes["Dose 2"]) {
+      if (_vaccineCentre.nextAvailableSlot18_Dose2 != null &&
+          _vaccineCentre.nextAvailableSlot45_Dose2 != null)
+        _nextAvailableslots["Dose"] =
+            (_vaccineCentre.nextAvailableSlot18_Dose2.compareTo(
+                _vaccineCentre.nextAvailableSlot45_Dose2) > 0 ? _vaccineCentre
+                .nextAvailableSlot45_Dose2 : _vaccineCentre
+                .nextAvailableSlot18_Dose2).toString();
+      else
+        _nextAvailableslots["Dose"] =
+            ((_vaccineCentre.nextAvailableSlot18_Dose2 ??
+                _vaccineCentre.nextAvailableSlot45_Dose2) ?? "-").toString();
 
-  if(ageFilter["age18"] && ageFilter["age45"] && _vaccineTypes["Dose 1"] && _vaccineTypes["Dose 2"]){
-    _nextAvailableslots["Dose 1"] = _vaccineCentre.nextAvailableSlot_Dose1;
-    _nextAvailableslots["Dose 2"] = _vaccineCentre.nextAvailableSlot_Dose2;
-    return _vaccineCentre.getSlots();}
-  if(ageFilter["age18"] && ageFilter["age45"] && _vaccineTypes["Dose 1"] && !_vaccineTypes["Dose 2"]){
-    _nextAvailableslots["Dose 1"] = _vaccineCentre.nextAvailableSlot_Dose1;
-    _nextAvailableslots["Dose 2"] = _vaccineCentre.nextAvailableSlot_Dose2;
-    return _vaccineCentre.totalAvailableCapacityDose1_18 ?? 0 + _vaccineCentre.totalAvailableCapacityDose1_45 ?? 0;}
-  if(ageFilter["age18"] && ageFilter["age45"] && !_vaccineTypes["Dose 1"] && _vaccineTypes["Dose 2"])
-    return _vaccineCentre.totalAvailableCapacityDose2_18 ?? 0 + _vaccineCentre.totalAvailableCapacityDose2_45 ??0;
-  if(ageFilter["age18"] && !ageFilter["age45"] && _vaccineTypes["Dose 1"] && _vaccineTypes["Dose 2"])
-    return _vaccineCentre.totalAvailableCapacityDose1_18 ?? 0 + _vaccineCentre.totalAvailableCapacityDose2_18 ?? 0;
-  if(!ageFilter["age18"] && ageFilter["age45"] && _vaccineTypes["Dose 1"] && _vaccineTypes["Dose 2"])
-    return _vaccineCentre.totalAvailableCapacityDose1_45 ?? 0 + _vaccineCentre.totalAvailableCapacityDose2_45 ?? 0;
-  if(!ageFilter["age18"] && ageFilter["age45"] && !_vaccineTypes["Dose 1"] && _vaccineTypes["Dose 2"])
-    return  _vaccineCentre.totalAvailableCapacityDose2_45 ?? 0;
-  if(!ageFilter["age18"] && ageFilter["age45"] && _vaccineTypes["Dose 1"] && !_vaccineTypes["Dose 2"])
-    return  _vaccineCentre.totalAvailableCapacityDose1_45 ?? 0;
-  if(ageFilter["age18"] && !ageFilter["age45"] && !_vaccineTypes["Dose 1"] && _vaccineTypes["Dose 2"])
-    return  _vaccineCentre.totalAvailableCapacityDose2_18 ?? 0;
-  if(ageFilter["age18"] && !ageFilter["age45"] && _vaccineTypes["Dose 1"] && !_vaccineTypes["Dose 2"])
-    return  _vaccineCentre.totalAvailableCapacityDose2_18 ?? 0;
+      return _vaccineCentre.totalAvailableCapacityDose2_18 ??
+          0 + _vaccineCentre.totalAvailableCapacityDose2_45 ?? 0;
+    }
+    if (ageFilter["age18"] && !ageFilter["age45"] && _vaccineTypes["Dose 1"] &&
+        _vaccineTypes["Dose 2"]) {
+      if (_vaccineCentre.nextAvailableSlot18_Dose1 != null &&
+          _vaccineCentre.nextAvailableSlot18_Dose2 != null)
+        _nextAvailableslots["Dose"] =
+            (_vaccineCentre.nextAvailableSlot18_Dose1.compareTo(
+                _vaccineCentre.nextAvailableSlot18_Dose2) > 0 ? _vaccineCentre
+                .nextAvailableSlot18_Dose2 : _vaccineCentre
+                .nextAvailableSlot18_Dose1).toString();
+      else
+        _nextAvailableslots["Dose"] =
+            ((_vaccineCentre.nextAvailableSlot18_Dose2 ??
+                _vaccineCentre.nextAvailableSlot18_Dose1) ?? "-").toString();
+
+      return _vaccineCentre.totalAvailableCapacityDose1_18 ??
+          0 + _vaccineCentre.totalAvailableCapacityDose2_18 ?? 0;
+    }
+    if (!ageFilter["age18"] && ageFilter["age45"] && _vaccineTypes["Dose 1"] &&
+        _vaccineTypes["Dose 2"]) {
+      if (_vaccineCentre.nextAvailableSlot45_Dose1 != null &&
+          _vaccineCentre.nextAvailableSlot45_Dose2 != null)
+        _nextAvailableslots["Dose"] =
+            (_vaccineCentre.nextAvailableSlot45_Dose1.compareTo(
+                _vaccineCentre.nextAvailableSlot45_Dose2) > 0 ? _vaccineCentre
+                .nextAvailableSlot45_Dose2 : _vaccineCentre
+                .nextAvailableSlot45_Dose1).toString();
+      else
+        _nextAvailableslots["Dose"] =
+            ((_vaccineCentre.nextAvailableSlot45_Dose2 ??
+                _vaccineCentre.nextAvailableSlot45_Dose1) ?? "-").toString();
+
+      return _vaccineCentre.totalAvailableCapacityDose1_45 ??
+          0 + _vaccineCentre.totalAvailableCapacityDose2_45 ?? 0;
+    }
+    if (!ageFilter["age18"] && ageFilter["age45"] && !_vaccineTypes["Dose 1"] &&
+        _vaccineTypes["Dose 2"]) {
+      _nextAvailableslots["Dose"] =
+          (_vaccineCentre.nextAvailableSlot45_Dose2 ?? "-").toString();
+      return _vaccineCentre.totalAvailableCapacityDose2_45 ?? 0;
+    }
+    if (!ageFilter["age18"] && ageFilter["age45"] && _vaccineTypes["Dose 1"] &&
+        !_vaccineTypes["Dose 2"]) {
+      _nextAvailableslots["Dose"] =
+          (_vaccineCentre.nextAvailableSlot45_Dose1 ?? "-").toString();
+      return _vaccineCentre.totalAvailableCapacityDose1_45 ?? 0;
+    }
+    if (ageFilter["age18"] && !ageFilter["age45"] && !_vaccineTypes["Dose 1"] &&
+        _vaccineTypes["Dose 2"]) {
+      _nextAvailableslots["Dose"] =
+          (_vaccineCentre.nextAvailableSlot18_Dose2 ?? "-").toString();
+      return _vaccineCentre.totalAvailableCapacityDose2_18 ?? 0;
+    }
+    if (ageFilter["age18"] && !ageFilter["age45"] && _vaccineTypes["Dose 1"] &&
+        !_vaccineTypes["Dose 2"]) {
+      _nextAvailableslots["Dose"] =
+          (_vaccineCentre.nextAvailableSlot18_Dose1 ?? "-").toString();
+      return _vaccineCentre.totalAvailableCapacityDose2_18 ?? 0;
+    }
+    return 0;
   }
 }

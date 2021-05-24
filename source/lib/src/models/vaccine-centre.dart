@@ -101,12 +101,12 @@ class CentersViewModel {
    bool isSubcribed;
   final bool isAVailableFor18;
   final bool isAVailableFor45;
-  final String nextAvailableSlot_Dose1;
-  final String nextAvailableSlot_Dose2;
-  final String nextAvailableSlot18_Dose1;
-  final String nextAvailableSlot18_Dose2;
-  final String nextAvailableSlot45_Dose1;
-  final String nextAvailableSlot45_Dose2;
+  final DateTime nextAvailableSlot_Dose1;
+  final DateTime nextAvailableSlot_Dose2;
+  final DateTime nextAvailableSlot18_Dose1;
+  final DateTime nextAvailableSlot18_Dose2;
+  final DateTime nextAvailableSlot45_Dose1;
+  final DateTime nextAvailableSlot45_Dose2;
   final int totalAvailableCapacityDose1;
   final int totalAvailableCapacityDose2;
   final int totalAvailableCapacityDose1_18;
