@@ -5,11 +5,14 @@ import 'package:vaxometer/src/models/vaccine-centre.dart';
 import 'package:vaxometer/src/shared/slot-modal.dart';
 
 class SlotTile extends StatelessWidget {
-  final VaccineCentre _vaccineCentre;
+  final CentersViewModel _vaccineCentre;
+   Map<String, bool> _vaccineTypes;
+   Map<String, bool> ageFilter;
+  Map<String, String> _nextAvailableslots = {};
   final Future<void> Function(int centreId, bool isSubscribe) callBack;
 
-  SlotTile(this._vaccineCentre, {this.callBack});
-
+  SlotTile(this._vaccineCentre,this._vaccineTypes,this.ageFilter, {this.callBack});
+  // SlotTile(this._vaccineCentre, {this.callBack});
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -67,7 +70,7 @@ class SlotTile extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(_vaccineCentre.fee_type, style: TextStyle(fontSize: 13.0, color: Colors.orange)),
-                          Text("Next Slot on: " + _vaccineCentre.getNextSlotOn(), style: TextStyle(fontSize: 13.0, color: Colors.green))
+                          Text("Next Slot on: " + _vaccineCentre.getNextSlotOn(), style: TextStyle(fontSize: 13.0, color: Colors.green)),
                         ]
                       )
                     ),
@@ -106,7 +109,7 @@ class SlotTile extends StatelessWidget {
                     // ),
 
                     GestureDetector(
-                      child: Text(_vaccineCentre.getSlots().toString() + ' slots', style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue)),
+                      child: Text(getSlots().toString() + ' slots', style: TextStyle(decoration: TextDecoration.underline, color: Colors.blue)),
                       onTap: () async {
                         await showDialog(
                           context: context,
@@ -129,7 +132,7 @@ class SlotTile extends StatelessWidget {
                         onPrimary: Colors.white, // foreground
                       ),
                       onPressed: () async { 
-                        if (_vaccineCentre.getSlots() > 0) {
+                        if (getSlots() > 0) {
                           //Book 
                           var bookUrl = "https://selfregistration.cowin.gov.in/";
                           await canLaunch(bookUrl) ? await launch(bookUrl) : 
@@ -140,7 +143,7 @@ class SlotTile extends StatelessWidget {
                           await callBack(_vaccineCentre.center_id, _vaccineCentre.isSubcribed);
                         }
                       },
-                      child: Text(_vaccineCentre.getSlots() > 0 ? 'Book Now': (!_vaccineCentre.isSubcribed ? 'Notify Me': "Unsubscribe")),
+                      child: Text(getSlots() > 0 ? 'Book Now': (!_vaccineCentre.isSubcribed ? 'Notify Me': "Unsubscribe")),
                     ))
                   ],
                 ) 
@@ -149,5 +152,30 @@ class SlotTile extends StatelessWidget {
           ),
         ),
     );
+  }
+  int getSlots(){
+
+  if(ageFilter["age18"] && ageFilter["age45"] && _vaccineTypes["Dose 1"] && _vaccineTypes["Dose 2"]){
+    _nextAvailableslots["Dose 1"] = _vaccineCentre.nextAvailableSlot_Dose1;
+    _nextAvailableslots["Dose 2"] = _vaccineCentre.nextAvailableSlot_Dose2;
+    return _vaccineCentre.getSlots();}
+  if(ageFilter["age18"] && ageFilter["age45"] && _vaccineTypes["Dose 1"] && !_vaccineTypes["Dose 2"]){
+    _nextAvailableslots["Dose 1"] = _vaccineCentre.nextAvailableSlot_Dose1;
+    _nextAvailableslots["Dose 2"] = _vaccineCentre.nextAvailableSlot_Dose2;
+    return _vaccineCentre.totalAvailableCapacityDose1_18 ?? 0 + _vaccineCentre.totalAvailableCapacityDose1_45 ?? 0;}
+  if(ageFilter["age18"] && ageFilter["age45"] && !_vaccineTypes["Dose 1"] && _vaccineTypes["Dose 2"])
+    return _vaccineCentre.totalAvailableCapacityDose2_18 ?? 0 + _vaccineCentre.totalAvailableCapacityDose2_45 ??0;
+  if(ageFilter["age18"] && !ageFilter["age45"] && _vaccineTypes["Dose 1"] && _vaccineTypes["Dose 2"])
+    return _vaccineCentre.totalAvailableCapacityDose1_18 ?? 0 + _vaccineCentre.totalAvailableCapacityDose2_18 ?? 0;
+  if(!ageFilter["age18"] && ageFilter["age45"] && _vaccineTypes["Dose 1"] && _vaccineTypes["Dose 2"])
+    return _vaccineCentre.totalAvailableCapacityDose1_45 ?? 0 + _vaccineCentre.totalAvailableCapacityDose2_45 ?? 0;
+  if(!ageFilter["age18"] && ageFilter["age45"] && !_vaccineTypes["Dose 1"] && _vaccineTypes["Dose 2"])
+    return  _vaccineCentre.totalAvailableCapacityDose2_45 ?? 0;
+  if(!ageFilter["age18"] && ageFilter["age45"] && _vaccineTypes["Dose 1"] && !_vaccineTypes["Dose 2"])
+    return  _vaccineCentre.totalAvailableCapacityDose1_45 ?? 0;
+  if(ageFilter["age18"] && !ageFilter["age45"] && !_vaccineTypes["Dose 1"] && _vaccineTypes["Dose 2"])
+    return  _vaccineCentre.totalAvailableCapacityDose2_18 ?? 0;
+  if(ageFilter["age18"] && !ageFilter["age45"] && _vaccineTypes["Dose 1"] && !_vaccineTypes["Dose 2"])
+    return  _vaccineCentre.totalAvailableCapacityDose2_18 ?? 0;
   }
 }
