@@ -30,8 +30,6 @@ class VaxometerService {
   Future<void> followCentre(String deviceId, int centreId, bool isSubscribe) async {
     _baseUrl = "https://vaxometerindia.azurewebsites.net/api/v1/";
     await HttpService.post<bool>(_baseUrl + "Vaxometer/RegisterDevice/" + deviceId, {
-      "deviceId": deviceId,
-      "date": DateTime.now().toString(),
       "centerId": centreId,
       "isRegister": isSubscribe
     });
