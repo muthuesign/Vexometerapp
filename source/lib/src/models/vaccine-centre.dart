@@ -70,8 +70,7 @@ class VaccineCentreV2 {
 
   VaccineCentreV2.fromJson(Map<String, dynamic> json)
       : totalSubscriptionCount = json["totalSubscriptionCount"],
-        vaccineTypes = null,
-        // json["vaccineTypes"] != null ? List.from(json["vaccineTypes"]).map((e) => e).toList() : null,
+        vaccineTypes = json["vaccineTypes"] != null ? new List<String>.from(json["vaccineTypes"]) : null,
         centersViewModel = null;
         // json["centersViewModel"]!=null ? List.from(json["centersViewModel"]).map((
         //     e) => CentersViewModel.fromJson(e)).toList() : null;
