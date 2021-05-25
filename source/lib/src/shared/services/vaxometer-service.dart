@@ -8,7 +8,7 @@ class VaxometerService {
   VaccineCentreV2 vaccineCentreV2;
 
   Future<VaccineCentreV2> getCentresByPin(String deviceId, String pinCode) async {
-    var response = await HttpService.get<dynamic>(_baseUrl + "VaxometerV2/Centers/DeviceIds/$deviceId/Pincodes/560037");
+    var response = await HttpService.get<dynamic>(_baseUrl + "VaxometerV2/Centers/DeviceIds/$deviceId/Pincodes/$pinCode");
     VaccineCentreV2 vaccineCentreV2 = new VaccineCentreV2(null, null, null);
 
     vaccineCentreV2.centersViewModel = getCenters(response);

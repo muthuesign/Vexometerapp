@@ -47,7 +47,7 @@ class _HomeState extends State<Home> {
     _pinCode = _searchController.text.isEmpty ? await GeoFinder.getPinCodeByMyLoction(): _searchController.text;
     var vaccCentres = await _vaxometerService.getCentresByPin(globals.onesignalUserId, _pinCode);
     var centersViewModel = vaccCentres.centersViewModel;
-    Map doseMap = {"Dose 1": true,"Dose 2": true };
+    centersViewModel.sort((b,a) => a.getInitialSlots().compareTo(b.getInitialSlots()));
     _vaccineTypes = new Map.fromIterable(vaccCentres.vaccineTypes,
     key: (item) => item,
       value: (item) => true
@@ -106,7 +106,7 @@ class _HomeState extends State<Home> {
         && (ele.sessions != null && ele.sessions.any((a) => _vacTypeFilter(a)))
 
       ).toList();
-      _filteredVaccineCentres.sort((a, b) => a.getSlots().compareTo(b.getSlots()));
+      _filteredVaccineCentres.sort((b, a) => a.getSlots().compareTo(b.getSlots()));
   }
 
   ListView _vaccineCentreListView() {
