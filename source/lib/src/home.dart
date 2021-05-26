@@ -1,6 +1,4 @@
-import 'dart:io';
 
-import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:toast/toast.dart';
 import 'package:vaxometer/src/globals.dart' as globals;
@@ -24,15 +22,17 @@ class _HomeState extends State<Home> {
   String _deviceId;
   TextEditingController _searchController = new TextEditingController();
   VaxometerService _vaxometerService = new VaxometerService();
-  Future<List<VaccineCentre>> _futureVaccineCentres;
-  List<VaccineCentre> _vaccineCentres;
-  List<VaccineCentre> _filteredVaccineCentres;
+  Future<List<CentersViewModel>> _futureVaccineCentres;
+  List<CentersViewModel> _vaccineCentres;
+  List<CentersViewModel> _filteredVaccineCentres;
   String _pinCode = "";
+  bool isPinEntered = true;
   var _vacCentrefilters = [true, true, true, true, true];
   //var _vacTypes = [ "Covishield", "Covaxin", "Sputnik V"];
   //var _vacTypesFilter = List.generate(3, (index) => true);
-  Map<String, bool> _vaccineTypes = {"Covishield": true, "Covaxin": true, "Sputnik V": true};
-  
+  Map<String, bool> _vaccineTypes ;//= {"Covishield": true, "Covaxin": true, "Sputnik V": true};
+  Map<String, bool> ageFilter = {"age18": true, "age45" : true};
+
   @override
   void initState() {
     super.initState();
@@ -44,26 +44,48 @@ class _HomeState extends State<Home> {
     _futureVaccineCentres = _getVaccineCentre();
   }
 
-  Future<List<VaccineCentre>> _getVaccineCentre() async {
+  Future<List<CentersViewModel>> _getVaccineCentre() async {
     _pinCode = _searchController.text.isEmpty ? await GeoFinder.getPinCodeByMyLoction(): _searchController.text;
     var vaccCentres = await _vaxometerService.getCentresByPin(globals.onesignalUserId, _pinCode);
+    var centersViewModel = vaccCentres.centersViewModel;
+    centersViewModel.sort((b,a) => a.getInitialSlots().compareTo(b.getInitialSlots()));
+    _vaccineTypes = new Map.fromIterable(vaccCentres.vaccineTypes,
+    key: (item) => item,
+      value: (item) => true
+    );
+    _vaccineTypes["Dose 1"] = true;
+    _vaccineTypes["Dose 2"] = true;
     Loader.close(context);
-    return vaccCentres;
+    return centersViewModel;
   }
 
   bool _ageFilter(VaccineSession vs) {
-    if (_vacCentrefilters[0] && !_vacCentrefilters[1])
+    if (!_vacCentrefilters[0]) {
+      ageFilter.update("age18", (value) => true);
+
+      if(!_vacCentrefilters[1]){
+        ageFilter.update("age45", (value) => true);
+      } else
+      ageFilter.update("age45", (value) => false);
       return vs.min_age_limit == 18;
-    else if (!_vacCentrefilters[0] && _vacCentrefilters[1])
+    }
+    if (!_vacCentrefilters[1]) {
+      ageFilter.update("age45", (value) => true);
+      if(!_vacCentrefilters[0]){
+        ageFilter.update("age18", (value) => true);
+      } else
+        ageFilter.update("age18", (value) => false);
       return vs.min_age_limit == 45;
-    
+
+    }
     return true;
+
   }
 
   bool _feeTypeFilter(String feeType) {
-    if (_vacCentrefilters[2] && !_vacCentrefilters[3])
+    if (!_vacCentrefilters[2] && _vacCentrefilters[3])
       return feeType == 'Free';
-    else if (!_vacCentrefilters[2] && _vacCentrefilters[3])
+    else if (_vacCentrefilters[2] && !_vacCentrefilters[3])
       return feeType == 'Paid';
     
     return true;
@@ -72,19 +94,20 @@ class _HomeState extends State<Home> {
   bool _vacTypeFilter(VaccineSession vs) {
     var vacTypes = [];
     _vaccineTypes.forEach((key, value) {
-      if (value)
+      if (value && (key!="Dose 1" && key!= "Dose 2"))
         vacTypes.add(key.toLowerCase());
      });
       
     return vacTypes.contains(vs.vaccine.toLowerCase());
   }
-
-  void applyFilter() {
+ void applyFilter() {
       _filteredVaccineCentres = _vaccineCentres.where((ele) => 
         (ele.sessions != null && ele.sessions.any((a) => _ageFilter(a))) 
         && _feeTypeFilter(ele.fee_type)
-        && (ele.sessions != null && ele.sessions.any((a) => _vacTypeFilter(a))) ).toList();
-      _filteredVaccineCentres.sort((a, b) => a.getSlots().compareTo(b.getSlots()));
+        && (ele.sessions != null && ele.sessions.any((a) => _vacTypeFilter(a)))
+
+      ).toList();
+      _filteredVaccineCentres.sort((b, a) => a.getSlots().compareTo(b.getSlots()));
   }
 
   ListView _vaccineCentreListView() {
@@ -118,7 +141,7 @@ class _HomeState extends State<Home> {
     return Scaffold(
         key: _scaffoldKey,
         appBar: buildBar(context),
-        body: FutureBuilder<List<VaccineCentre>>(
+        body: FutureBuilder<List<CentersViewModel>>(
               future: _futureVaccineCentres,
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data.isNotEmpty) {
@@ -226,6 +249,7 @@ class _HomeState extends State<Home> {
         ),
         child: TextField(
           controller: _searchController,
+          keyboardType: TextInputType.number,
           style: TextStyle(
             fontSize: 14.0,
             color: Colors.black,
@@ -240,7 +264,7 @@ class _HomeState extends State<Home> {
               _searchController.clear();
             }): null,
             hintStyle: TextStyle(color: Colors.grey),
-            hintText: 'Search center',
+            hintText: 'Search With Your Pincode',
           ),
         ),
       ),
@@ -256,9 +280,17 @@ class _HomeState extends State<Home> {
                       ),
 	        child: Icon(Icons.search, color: Colors.white),
 	          onPressed: () async {
-              Loader.show(context);
-              await _pullRefresh();
-              setState((){});
+              if(_searchController.text.isNotEmpty) {
+                Loader.show(context);
+                await _pullRefresh();
+                setState(() {
+                  isPinEntered = true;
+                });
+              } else {
+                setState(() {
+                  isPinEntered = false;
+                });
+              }
             },
           ),
         )
