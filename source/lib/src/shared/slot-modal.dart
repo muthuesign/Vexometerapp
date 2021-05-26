@@ -12,9 +12,6 @@ class SlotModal extends StatefulWidget {
 }
 
 class _SlotModalState extends State<SlotModal> {
-  // final List<VaccineSession> _sessions;
-
-  // _SlotModalState(this._sessions);
 
   @override
   void initState() {
