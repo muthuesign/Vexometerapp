@@ -70,8 +70,7 @@ class VaccineCentreV2 {
 
   VaccineCentreV2.fromJson(Map<String, dynamic> json)
       : totalSubscriptionCount = json["totalSubscriptionCount"],
-        vaccineTypes = null,
-        // json["vaccineTypes"] != null ? List.from(json["vaccineTypes"]).map((e) => e).toList() : null,
+        vaccineTypes = json["vaccineTypes"] != null ? new List<String>.from(json["vaccineTypes"]) : null,
         centersViewModel = null;
         // json["centersViewModel"]!=null ? List.from(json["centersViewModel"]).map((
         //     e) => CentersViewModel.fromJson(e)).toList() : null;
@@ -101,12 +100,12 @@ class CentersViewModel {
    bool isSubcribed;
   final bool isAVailableFor18;
   final bool isAVailableFor45;
-  final String nextAvailableSlot_Dose1;
-  final String nextAvailableSlot_Dose2;
-  final String nextAvailableSlot18_Dose1;
-  final String nextAvailableSlot18_Dose2;
-  final String nextAvailableSlot45_Dose1;
-  final String nextAvailableSlot45_Dose2;
+  final DateTime nextAvailableSlot_Dose1;
+  final DateTime nextAvailableSlot_Dose2;
+  final DateTime nextAvailableSlot18_Dose1;
+  final DateTime nextAvailableSlot18_Dose2;
+  final DateTime nextAvailableSlot45_Dose1;
+  final DateTime nextAvailableSlot45_Dose2;
   final int totalAvailableCapacityDose1;
   final int totalAvailableCapacityDose2;
   final int totalAvailableCapacityDose1_18;
@@ -140,12 +139,12 @@ class CentersViewModel {
         isSubcribed = json["isSubcribed"] ?? false,
         isAVailableFor18 = json["isAVailableFor18"],
         isAVailableFor45 = json["isAVailableFor45"],
-        nextAvailableSlot_Dose1 = json["nextAvailableSlot_Dose1"],
-        nextAvailableSlot_Dose2 = json["nextAvailableSlot_Dose2"],
-        nextAvailableSlot18_Dose1 = json["nextAvailableSlot18_Dose1"],
-        nextAvailableSlot18_Dose2 = json["nextAvailableSlot18_Dose2"],
-        nextAvailableSlot45_Dose1 = json["nextAvailableSlot45_Dose1"],
-        nextAvailableSlot45_Dose2 = json["nextAvailableSlot45_Dose2"],
+        nextAvailableSlot_Dose1 = json["nextAvailableSlot_Dose1"]!=null ? DateTime.parse(json["nextAvailableSlot_Dose1"]) : null,
+        nextAvailableSlot_Dose2 = json["nextAvailableSlot_Dose2"]!=null ? DateTime.parse(json["nextAvailableSlot_Dose2"]) : null,
+        nextAvailableSlot18_Dose1 = json["nextAvailableSlot18_Dose1"]!=null ? DateTime.parse(json["nextAvailableSlot18_Dose1"]) : null,
+        nextAvailableSlot18_Dose2 = json["nextAvailableSlot18_Dose2"]!=null ? DateTime.parse(json["nextAvailableSlot18_Dose2"]) : null,
+        nextAvailableSlot45_Dose1 = json["nextAvailableSlot45_Dose1"]!=null ? DateTime.parse(json["nextAvailableSlot45_Dose1"]) : null,
+        nextAvailableSlot45_Dose2 = json["nextAvailableSlot45_Dose2"]!=null ? DateTime.parse(json["nextAvailableSlot45_Dose2"]) : null,
         totalAvailableCapacityDose1 = json["totalAvailableCapacityDose1"],
         totalAvailableCapacityDose2 = json["totalAvailableCapacityDose2"],
         totalAvailableCapacityDose1_18 = json["totalAvailableCapacityDose1_18"],
@@ -163,4 +162,7 @@ class CentersViewModel {
     return sessions[0].date;
   }
 
+  int getInitialSlots() {
+    return totalAvailableCapacityDose1 + totalAvailableCapacityDose2;
+  }
 }
