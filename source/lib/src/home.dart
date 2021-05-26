@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:toast/toast.dart';
 import 'package:vaxometer/src/globals.dart' as globals;
 import 'package:vaxometer/src/models/vaccine-session.dart';
+import 'package:vaxometer/src/shared/expansion-slot-tile.dart';
 import 'package:vaxometer/src/shared/loader.dart';
 import 'package:vaxometer/src/shared/services/geo-finder.dart';
 import 'package:vaxometer/src/shared/services/vaxometer-service.dart';
-import './shared/slot-tile.dart';
 import 'models/vaccine-centre.dart';
 
 class Home extends StatefulWidget {
@@ -21,15 +21,15 @@ class _HomeState extends State<Home> {
   String _deviceId;
   TextEditingController _searchController = new TextEditingController();
   VaxometerService _vaxometerService = new VaxometerService();
-  Future<List<CentersViewModel>> _futureVaccineCentres;
-  List<CentersViewModel> _vaccineCentres;
-  List<CentersViewModel> _filteredVaccineCentres;
+  Future<List<VaccineCentre>> _futureVaccineCentres;
+  List<VaccineCentre> _vaccineCentres;
+  List<VaccineCentre> _filteredVaccineCentres;
   String _pinCode = "";
   bool isPinEntered = true;
   var _vacCentrefilters = [true, true, true, true, true];
   //var _vacTypes = [ "Covishield", "Covaxin", "Sputnik V"];
   //var _vacTypesFilter = List.generate(3, (index) => true);
-  Map<String, bool> _vaccineTypes ;//= {"Covishield": true, "Covaxin": true, "Sputnik V": true};
+  Map<String, bool> _vaccineTypes;
   Map<String, bool> ageFilter = {"age18": true, "age45" : true};
 
   @override
@@ -43,15 +43,15 @@ class _HomeState extends State<Home> {
     _futureVaccineCentres = _getVaccineCentre();
   }
 
-  Future<List<CentersViewModel>> _getVaccineCentre() async {
+  Future<List<VaccineCentre>> _getVaccineCentre() async {
     _pinCode = _searchController.text.isEmpty ? await GeoFinder.getPinCodeByMyLoction(): _searchController.text;
     var vaccCentres = await _vaxometerService.getCentresByPin(globals.onesignalUserId, _pinCode);
     var centersViewModel = vaccCentres.centersViewModel;
     centersViewModel.sort((b,a) => a.getInitialSlots().compareTo(b.getInitialSlots()));
     _vaccineTypes = new Map.fromIterable(vaccCentres.vaccineTypes,
-    key: (item) => item,
-      value: (item) => true
-    );
+      key: (item) => item,
+        value: (item) => true
+      );
     _vaccineTypes["Dose 1"] = true;
     _vaccineTypes["Dose 2"] = true;
     Loader.close(context);
@@ -115,8 +115,7 @@ class _HomeState extends State<Home> {
         itemCount: _filteredVaccineCentres.length,
         shrinkWrap: true,
         itemBuilder: (context, index) {
-          return SlotTile(_filteredVaccineCentres[index],_vaccineTypes,ageFilter, callBack: (int centreId, bool isSubscribe) async {
-            // return SlotTile(_filteredVaccineCentres[index], callBack: (int centreId, bool isSubscribe) async {
+          return ExpansionSlotTile(_filteredVaccineCentres[index], callBack: (int centreId, bool isSubscribe) async {
             Loader.show(context);
             await followCentre(centreId, isSubscribe);
             Loader.close(context);
@@ -141,7 +140,7 @@ class _HomeState extends State<Home> {
     return Scaffold(
         key: _scaffoldKey,
         appBar: buildBar(context),
-        body: FutureBuilder<List<CentersViewModel>>(
+        body: FutureBuilder<List<VaccineCentre>>(
               future: _futureVaccineCentres,
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data.isNotEmpty) {
