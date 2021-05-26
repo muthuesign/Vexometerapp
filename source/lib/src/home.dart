@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:toast/toast.dart';
 import 'package:vaxometer/src/globals.dart' as globals;
 import 'package:vaxometer/src/models/vaccine-session.dart';
+import 'package:vaxometer/src/shared/expansion-slot-tile.dart';
 import 'package:vaxometer/src/shared/loader.dart';
 import 'package:vaxometer/src/shared/services/geo-finder.dart';
 import 'package:vaxometer/src/shared/services/vaxometer-service.dart';
@@ -92,7 +93,7 @@ class _HomeState extends State<Home> {
         itemCount: _filteredVaccineCentres.length,
         shrinkWrap: true,
         itemBuilder: (context, index) {
-          return SlotTile(_filteredVaccineCentres[index], callBack: (int centreId, bool isSubscribe) async {
+          return ExpansionSlotTile(_filteredVaccineCentres[index], callBack: (int centreId, bool isSubscribe) async {
             Loader.show(context);
             await followCentre(centreId, isSubscribe);
             Loader.close(context);
