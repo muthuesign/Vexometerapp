@@ -1,0 +1,14 @@
+[git-together]
+	domain = dell.com
+[git-together "authors"]
+	sv = "Siva Vaddadi; siva_vaddadi"
+	ln = "Liza Ng; lng@pivotal.io"
+	gk = "Gordon Krull; gkrull@pivotal.io"
+	su = "Surisetty Chaitanya; surisetty_chaitanya"
+	yh = "Yifeng Hou; yhou@pivotal.io"
+	ka = "Kumar Ashish; k_ashish"
+	pk = "Purushottam K; purushottam_b_kumbha"
+	ss = "Sahoo, Soumya; soumya_gourab_sahoo@dell.com"
+	so = "Sirohi, Soumya; soumya_sirohi@dell.com"
+	aa = "Awasthi, Abhinav; abhinav_awasthi@dell.com"
+	sg = "Ghosh, Sharthak; sharthak_ghosh@dell.com"
