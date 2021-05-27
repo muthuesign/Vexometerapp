@@ -1,4 +1,6 @@
+import 'package:geocoding/geocoding.dart';
 import 'package:vaxometer/src/models/vaccine-session.dart';
+import 'package:vaxometer/src/shared/services/geo-finder.dart';
 
 class VaccineResponse {
   List<String> vaccineTypes;
@@ -90,5 +92,11 @@ class VaccineCentre {
 
   int getInitialSlots() {
     return totalAvailableCapacityDose1 + totalAvailableCapacityDose2;
+  }
+
+  Location geoLocation;
+
+  Future<void> setGeoLocation() async {
+    geoLocation = await GeoFinder.getCoordinatesFromAddress(address);
   }
 }

@@ -40,4 +40,15 @@ class GeoFinder {
       return "or Unable to get your location";
     }
   }
+
+  static Future<Location> getCoordinatesFromAddress(String address) async {
+    try {
+      List<Location> locations = await locationFromAddress(address, localeIdentifier: "en");
+      
+      Location location = locations[0];
+      return location;
+    } catch (ex) {
+      return null;
+    }
+  }
 }

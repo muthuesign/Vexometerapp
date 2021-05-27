@@ -11,6 +11,10 @@
         android:name="io.flutter.app.FlutterApplication"
         android:label="Vaxometer"
         android:icon="@mipmap/ic_launcher">
+
+        <meta-data android:name="com.google.android.geo.API_KEY"
+               android:value="AIzaSyD9N93aHhwX2R6mkRDH6MmilyUfmst_OoA"/>
+
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"
