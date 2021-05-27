@@ -15,14 +15,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState  extends State<MyApp>  {
   // This widget is the root of your application.
-  String _debugLabelString = "";
-  String _emailAddress;
-  String _externalUserId;
-  bool _enableConsentButton = false;
-
-  // CHANGE THIS parameter to true if you want to test GDPR privacy consent
-  bool _requireConsent = true;
-
+  
   @override
   void initState() {
     super.initState();

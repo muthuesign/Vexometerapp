@@ -19,7 +19,6 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  String _deviceId;
   TextEditingController _searchController = new TextEditingController();
   VaxometerService _vaxometerService = new VaxometerService();
   GoogleMapController _mapController;
@@ -29,8 +28,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       northeast: const LatLng(-8.982446, 153.823821),
     );
   Future<List<VaccineCentre>> _futureVaccineCentres;
-  List<VaccineCentre> _vaccineCentres;
-  List<VaccineCentre> _filteredVaccineCentres;
+  List<VaccineCentre> _vaccineCentres = [];
+  List<VaccineCentre> _filteredVaccineCentres = [];
   String _pinCode = "";
   bool isPinEntered = true;
   var _vacCentrefilters = [true, true, true, true, true];
@@ -53,19 +52,22 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
 
   Future<List<VaccineCentre>> _getVaccineCentre() async {
     try {
-      _vaccineCentres = null;
+      _vaccineCentres = [];
+      _filteredVaccineCentres = _vaccineCentres;
       _pinCode = _searchController.text.isEmpty ? await GeoFinder.getPinCodeByMyLoction(): _searchController.text;
       var vaccCentres = await _vaxometerService.getCentresByPin(globals.onesignalUserId, _pinCode);
       var centersViewModel = vaccCentres.centersViewModel;
       centersViewModel.sort((b,a) => a.getInitialSlots().compareTo(b.getInitialSlots()));
-      _vaccineCentres = centersViewModel;
-      _mapMarkers();
+      _vaccineCentres = centersViewModel ?? [];
+      _filteredVaccineCentres = _vaccineCentres;
+      _vacCentrefilters = [true, true, true, true, true];
       _vaccineTypes = new Map.fromIterable(vaccCentres.vaccineTypes,
         key: (item) => item,
           value: (item) => true
         );
       _vaccineTypes["Dose 1"] = true;
       _vaccineTypes["Dose 2"] = true;
+      _mapMarkers();
       return _vaccineCentres;
     } finally {
       Loader.close(context);
@@ -161,7 +163,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   }
 
   void _mapMarkers() {
-    if (_vaccineCentres == null || _vaccineCentres.isEmpty) return;
+    if (_vaccineCentres.isEmpty) return;
     
     var locTasks = <Future<void>>[];
     for(var vacCentre in _vaccineCentres) {
@@ -201,6 +203,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   }
 
   void _moveCamaraPos() {
+    if (_mBounds == null) return;
     Future.delayed(Duration(milliseconds: 2000)).then((value) {
       _mapController.moveCamera(
         CameraUpdate.newLatLngBounds(
@@ -251,7 +254,9 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 builder: (context, snapshot) {
                   if (snapshot.hasData && snapshot.data.isNotEmpty) {
                     // _vaccineCentres = _vaccineCentres ?? snapshot.data;
-                    // _filteredVaccineCentres = _filteredVaccineCentres ?? _vaccineCentres;
+                    if (_filteredVaccineCentres.isEmpty) {
+                      _filteredVaccineCentres = _vaccineCentres;
+                    }
                     return RefreshIndicator(
                         child: _vaccineCentreListView(),
                         onRefresh: () =>

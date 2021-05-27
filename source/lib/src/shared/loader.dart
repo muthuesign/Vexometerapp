@@ -34,7 +34,9 @@ class Loader {
       builder:(BuildContext context){
         return alert;
       },
-    );
+    ).then((value) { 
+      isShown = false;
+    });
     isShown = true;
   }
 
