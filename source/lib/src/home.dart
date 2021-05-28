@@ -1,4 +1,5 @@
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:toast/toast.dart';
@@ -17,7 +18,7 @@ class Home extends StatefulWidget {
   _HomeState createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
+class _HomeState extends State<Home> with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   TextEditingController _searchController = new TextEditingController();
   VaxometerService _vaxometerService = new VaxometerService();
@@ -28,6 +29,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       northeast: const LatLng(-8.982446, 153.823821),
     );
   Future<List<VaccineCentre>> _futureVaccineCentres;
+  Future<bool> _futureLocationMarkers;
   List<VaccineCentre> _vaccineCentres = [];
   List<VaccineCentre> _filteredVaccineCentres = [];
   String _pinCode = "";
@@ -36,6 +38,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   Iterable _gMapMarkers = [];
   Map<String, bool> _vaccineTypes;
   Map<String, bool> ageFilter = {"age18": true, "age45" : true};
+  bool _hasGeoLocation = false;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -46,13 +52,22 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     });
 
     _futureVaccineCentres = _getVaccineCentre();
+    _futureLocationMarkers = _getLocationMarkers();
 
     _tabController = TabController(vsync: this, length: 2);
+    _tabController.addListener(_handleTabSelection);
+  }
+
+  _handleTabSelection() {
+    if (_tabController.index == 1 && !_hasGeoLocation) {
+      _futureLocationMarkers = _getLocationMarkers();
+    }
   }
 
   Future<List<VaccineCentre>> _getVaccineCentre() async {
     try {
       _vaccineCentres = [];
+      _hasGeoLocation = false;
       _filteredVaccineCentres = _vaccineCentres;
       _pinCode = _searchController.text.isEmpty ? await GeoFinder.getPinCodeByMyLoction(): _searchController.text;
       var vaccCentres = await _vaxometerService.getCentresByPin(globals.onesignalUserId, _pinCode);
@@ -67,11 +82,32 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         );
       _vaccineTypes["Dose 1"] = true;
       _vaccineTypes["Dose 2"] = true;
-      _mapMarkers();
+      _handleTabSelection();
+      //_mapMarkers();
       return _vaccineCentres;
     } finally {
       Loader.close(context);
     }
+    
+  }
+
+  Future<bool> _runLocationTasks(List<VaccineCentre> vaccineCentres) async {
+    var locTasks = <Future<void>>[];
+    for(var vacCentre in vaccineCentres) {
+      locTasks.add(vacCentre.setGeoLocation());
+    }
+    await Future.wait(locTasks);
+    return true;
+  }
+
+  Future<bool> _getLocationMarkers() async {
+    Loader.show(context, message: "Preparing map...");
+    _hasGeoLocation = await _runLocationTasks(_vaccineCentres);
+    if (_hasGeoLocation) { 
+      _setMarkers();
+    }
+    Loader.close(context);
+    return _hasGeoLocation;
   }
 
   bool _ageFilter(VaccineSession vs) {
@@ -162,16 +198,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
-  void _mapMarkers() {
-    if (_vaccineCentres.isEmpty) return;
-    
-    var locTasks = <Future<void>>[];
-    for(var vacCentre in _vaccineCentres) {
-      locTasks.add(vacCentre.setGeoLocation());
-    }
-
-    Future.wait(locTasks).then((value) => _setMarkers());
-  }
+  
 
   void _setMarkers() {
     List<Marker> mMarkers = [];
@@ -269,27 +296,36 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                   } else {
                     return Align(
                         alignment: Alignment.center,
-                        child: Text("No records found " + _pinCode,
-                          textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)
-                        ));
+                        child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.0)));
                   }
                 },
               ),
-              GoogleMap(
-                mapType: MapType.normal,
-                onMapCreated: _onMapCreated,
-                initialCameraPosition: CameraPosition(
-                  target: const LatLng(
-                    12.120334410922474,
-                    77.62019331249995,
-                  ),
-                  tilt: 30.0,
-                  zoom: 17.0
-                ),
-                markers: Set.from(
-                  _gMapMarkers,
-                )
-              )
+              FutureBuilder<bool>(
+                future: _futureLocationMarkers,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done && snapshot.hasData && snapshot.data) {
+                    return GoogleMap(
+                        mapType: MapType.normal,
+                        onMapCreated: _onMapCreated,
+                        initialCameraPosition: CameraPosition(
+                          target: const LatLng(
+                            12.120334410922474,
+                            77.62019331249995,
+                          ),
+                          tilt: 30.0,
+                          zoom: 11.0
+                        ),
+                        markers: Set.from(
+                          _gMapMarkers,
+                        )
+                      );
+                  } else {
+                    return Align(
+                        alignment: Alignment.center,
+                        child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.0))
+                        );
+                  }
+                })
         ]),
       )
     );

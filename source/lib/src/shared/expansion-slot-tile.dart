@@ -122,8 +122,11 @@ class _ExpansionSlotTileState extends State<ExpansionSlotTile> with SingleTicker
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Icon(Icons.location_pin, color: Colors.grey, size: 14.0),
-                               Flexible(
-               child:Text(_vaccineCentre.address ?? _vaccineCentre.block_name, style: TextStyle(fontSize: 11.0, color: Colors.grey)))
+                               Expanded(
+                                child:Text(_vaccineCentre.address ?? _vaccineCentre.block_name, style: TextStyle(fontSize: 11.0, color: Colors.grey),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis),
+                                )
                             ],),
                           onTap: () {
                             
