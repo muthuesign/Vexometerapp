@@ -2,9 +2,9 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
 class GeoFinder {
-  static Future<Position> getCurrentLocation() {
-    return Geolocator
-      .getCurrentPosition(desiredAccuracy: LocationAccuracy.best, forceAndroidLocationManager: true).catchError((e) {
+  static Future<Position> getCurrentLocation() async {
+    return await Geolocator
+      .getCurrentPosition(desiredAccuracy: LocationAccuracy.best, forceAndroidLocationManager: true, timeLimit: Duration(seconds: 10)).catchError((e) {
         print(e);
       });
   }
@@ -29,6 +29,9 @@ class GeoFinder {
       var canGps = await Geolocator.isLocationServiceEnabled();
         if (canGps) {
         var pos = await getCurrentLocation();
+
+        if (pos == null)
+          pos = await Geolocator.getLastKnownPosition();
         
         Placemark place = await getAddressFromLatLng(pos);
         return place.postalCode;

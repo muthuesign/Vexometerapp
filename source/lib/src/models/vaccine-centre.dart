@@ -90,6 +90,8 @@ class VaccineCentre {
     return sessions[0].date;
   }
 
+  bool hasNextSlot() => isAVailableFor18 || isAVailableFor45;
+
   int getInitialSlots() {
     return totalAvailableCapacityDose1 + totalAvailableCapacityDose2;
   }

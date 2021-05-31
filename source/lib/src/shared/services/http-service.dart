@@ -16,7 +16,7 @@ class HttpService {
       T body = jsonDecode(res.body);
       return body;
     } else {
-      throw "No Records Found";
+      throw "No records found";
     }
   }
 

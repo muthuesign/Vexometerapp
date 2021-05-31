@@ -33,8 +33,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
   List<VaccineCentre> _vaccineCentres = [];
   List<VaccineCentre> _filteredVaccineCentres = [];
   String _pinCode = "";
-  bool isPinEntered = true;
-  var _vacCentrefilters = [true, true, true, true, true];
+  var _vacCentrefilters; 
   Iterable _gMapMarkers = [];
   Map<String, bool> _vaccineTypes;
   Map<String, bool> ageFilter = {"age18": true, "age45" : true};
@@ -51,6 +50,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
       setState(() {});
     });
 
+    resetFilter();
+
     _futureVaccineCentres = _getVaccineCentre();
     _futureLocationMarkers = _getLocationMarkers();
 
@@ -64,6 +65,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
     }
   }
 
+  void resetFilter() {
+    _vacCentrefilters = [true, true, true, true, true];
+  }
+
   Future<List<VaccineCentre>> _getVaccineCentre() async {
     try {
       _vaccineCentres = [];
@@ -75,7 +80,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
       centersViewModel.sort((b,a) => a.getInitialSlots().compareTo(b.getInitialSlots()));
       _vaccineCentres = centersViewModel ?? [];
       _filteredVaccineCentres = _vaccineCentres;
-      _vacCentrefilters = [true, true, true, true, true];
+      resetFilter();
       _vaccineTypes = new Map.fromIterable(vaccCentres.vaccineTypes,
         key: (item) => item,
           value: (item) => true
@@ -83,7 +88,6 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
       _vaccineTypes["Dose 1"] = true;
       _vaccineTypes["Dose 2"] = true;
       _handleTabSelection();
-      //_mapMarkers();
       return _vaccineCentres;
     } finally {
       Loader.close(context);
@@ -92,6 +96,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
   }
 
   Future<bool> _runLocationTasks(List<VaccineCentre> vaccineCentres) async {
+    if (vaccineCentres.isEmpty) return false;
     var locTasks = <Future<void>>[];
     for(var vacCentre in vaccineCentres) {
       locTasks.add(vacCentre.setGeoLocation());
@@ -101,42 +106,26 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
   }
 
   Future<bool> _getLocationMarkers() async {
-    Loader.show(context, message: "Preparing map...");
     _hasGeoLocation = await _runLocationTasks(_vaccineCentres);
     if (_hasGeoLocation) { 
       _setMarkers();
     }
-    Loader.close(context);
     return _hasGeoLocation;
   }
 
   bool _ageFilter(VaccineSession vs) {
-    if (!_vacCentrefilters[0]) {
-      ageFilter.update("age18", (value) => true);
-
-      if(!_vacCentrefilters[1]){
-        ageFilter.update("age45", (value) => true);
-      } else
-      ageFilter.update("age45", (value) => false);
-      return vs.min_age_limit == 18;
-    }
-    if (!_vacCentrefilters[1]) {
-      ageFilter.update("age45", (value) => true);
-      if(!_vacCentrefilters[0]){
-        ageFilter.update("age18", (value) => true);
-      } else
-        ageFilter.update("age18", (value) => false);
-      return vs.min_age_limit == 45;
-
-    }
-    return true;
-
+    if (_vacCentrefilters[0] && !_vacCentrefilters[1])
+      return vs.min_age_limit == 18 && _hasDoses(vs);
+    else if (!_vacCentrefilters[0] && _vacCentrefilters[1])
+      return vs.min_age_limit == 45 && _hasDoses(vs);
+    
+    return _hasDoses(vs);
   }
 
   bool _feeTypeFilter(String feeType) {
-    if (!_vacCentrefilters[2] && _vacCentrefilters[3])
+    if (_vacCentrefilters[2] && !_vacCentrefilters[3])
       return feeType == 'Free';
-    else if (_vacCentrefilters[2] && !_vacCentrefilters[3])
+    else if (!_vacCentrefilters[2] && _vacCentrefilters[3])
       return feeType == 'Paid';
     
     return true;
@@ -151,6 +140,16 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
       
     return vacTypes.contains(vs.vaccine.toLowerCase());
   }
+
+  bool _hasDoses(VaccineSession vs) {
+    if (_vaccineTypes["Dose 1"] && !_vaccineTypes["Dose 2"])
+      return vs.available_capacity_dose1 > 0;
+    else if (!_vaccineTypes["Dose 1"] && _vaccineTypes["Dose 2"])
+      return vs.available_capacity_dose2 > 0;
+
+    return true;
+  }
+
  void applyFilter() {
       _filteredVaccineCentres = _vaccineCentres.where((ele) => 
         (ele.sessions != null && ele.sessions.any((a) => _ageFilter(a))) 
@@ -162,20 +161,23 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
       _setMarkers();
   }
 
-  ListView _vaccineCentreListView() {
-    return ListView.builder(
+  Widget _vaccineCentreListView() {
+    return _filteredVaccineCentres.isNotEmpty ? ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: _filteredVaccineCentres.length,
         shrinkWrap: true,
         itemBuilder: (context, index) {
           return ExpansionSlotTile(_filteredVaccineCentres[index], callBack: (int centreId, bool isSubscribe) async {
-            await followCentre(centreId, isSubscribe);
+           await followCentre(centreId, isSubscribe);
             Toast.show(isSubscribe ? "Subscribed": "Un Subscribed", context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
-            _pullRefresh().then((value) => {
-              setState(() {})
-            });
+            //_pullRefresh().then((value) => {
+            //  setState(() {})
+            //});
           });
-        });
+        }): Align(
+                        alignment: Alignment.center,
+                        child: Text("No records found",
+                          textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)));
   }
 
   Future<void> _pullRefresh() async {
@@ -230,7 +232,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
   }
 
   void _moveCamaraPos() {
-    if (_mBounds == null) return;
+    _mBounds = _mBounds ?? new LatLngBounds(southwest: LatLng(23.63936, 68.14712), northeast: LatLng(28.20453, 97.34466));
     Future.delayed(Duration(milliseconds: 2000)).then((value) {
       _mapController.moveCamera(
         CameraUpdate.newLatLngBounds(
@@ -267,6 +269,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return DefaultTabController(
           length: 2,
         child: Scaffold(
@@ -279,11 +282,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
             FutureBuilder<List<VaccineCentre>>(
                 future: _futureVaccineCentres,
                 builder: (context, snapshot) {
-                  if (snapshot.hasData && snapshot.data.isNotEmpty) {
-                    // _vaccineCentres = _vaccineCentres ?? snapshot.data;
-                    if (_filteredVaccineCentres.isEmpty) {
-                      _filteredVaccineCentres = _vaccineCentres;
-                    }
+                  if (snapshot.connectionState ==  ConnectionState.done && snapshot.hasData) {
                     return RefreshIndicator(
                         child: _vaccineCentreListView(),
                         onRefresh: () =>
@@ -336,7 +335,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
     double top = offset.dy;
     await showMenu(
       context: context,
-      color: Colors.blue[50],
+      color: Color.fromRGBO(245,247,251, 1),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(10.0))
+      ),
       position: RelativeRect.fromLTRB(left, top, left+1, top+1),
       items: List.generate(_vaccineTypes.length, (index) => PopupMenuItem<bool>(
             child: StatefulBuilder(builder:
@@ -357,56 +359,66 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
     return new AppBar(
       leadingWidth: 35.0,
       flexibleSpace: Container(
+            //color: Color.fromRGBO(245,247,251, 1),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue, Colors.blue[300]],
-              ),
+            color: Colors.white,
+            border: Border.all(
+              color: Colors.grey.withOpacity(0.5),
+              width: 1.0,
             ),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.elliptical(300.0, 150.0),
+            ),
+        ),
           ),
       // leading: IconButton(iconSize: 20.0, icon: Icon(Icons.list, color: Colors.white), onPressed: () {
           
       //   }),
       
       bottom: PreferredSize(
-        preferredSize: Size.fromHeight(60.0),
+        preferredSize: Size.fromHeight(64.0),
         child: Column(
           children: [
             Container(
+                margin: EdgeInsets.only(top: 3.0),
                 height: 35.0,
-                padding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 2.0),
+                //padding: EdgeInsets.symmetric(vertical: 2.0, horizontal: 0.0),
                 color: Colors.white30,
                 child: ToggleButtons(
-                borderColor: Colors.white30,
-                fillColor: Colors.white,
-                borderRadius: BorderRadius.circular(6.0),
-                selectedBorderColor: Colors.blue,
-                color: Colors.blueGrey,
-                children: <Widget>[
-                  Container(width: (MediaQuery.of(context).size.width - 9)/5, child:Text("18+", textAlign: TextAlign.center)),
-                  Container(width: (MediaQuery.of(context).size.width - 9)/5, child:Text("45+", textAlign: TextAlign.center)),
-                  Container(width: (MediaQuery.of(context).size.width - 9)/5, child:Text("Free", textAlign: TextAlign.center)),
-                  Container(width: (MediaQuery.of(context).size.width - 9)/5, child:Text("Paid", textAlign: TextAlign.center)),
-                  Container(width: (MediaQuery.of(context).size.width - 9)/5.1, child:GestureDetector(
-                        onTapDown: (TapDownDetails details) {
-                          _showPopupMenu(details.globalPosition);
-                        },
-                        child: Icon(Icons.filter_alt)))
-                ],
-                onPressed: (int index) {
-                  setState(() {
-                    _vacCentrefilters[index] = !_vacCentrefilters[index];
-                    applyFilter();
-                  });
-                },
-                isSelected: _vacCentrefilters
-              )
+                  borderColor: Colors.grey,
+                  fillColor: Colors.lightBlue[300],
+                  borderRadius: BorderRadius.only(topLeft: Radius.circular(10.0), topRight: Radius.circular(10.0)),
+                  selectedBorderColor: Colors.blue,
+                  selectedColor: Colors.white,
+                  color: Colors.blueGrey,
+                  children: <Widget>[
+                    Container(width: (MediaQuery.of(context).size.width - 9)/6, child:Text("18+", textAlign: TextAlign.center)),
+                    Container(width: (MediaQuery.of(context).size.width - 9)/6, child:Text("45+", textAlign: TextAlign.center)),
+                    Container(width: (MediaQuery.of(context).size.width - 9)/6, child:Text("Free", textAlign: TextAlign.center)),
+                    Container(width: (MediaQuery.of(context).size.width - 9)/6, child:Text("Paid", textAlign: TextAlign.center)),
+                    Container(width: (MediaQuery.of(context).size.width - 9)/6, child:GestureDetector(
+                          onTapDown: (TapDownDetails details) {
+                            _showPopupMenu(details.globalPosition);
+                          },
+                          child: Icon(Icons.filter_alt)))
+                  ],
+                  onPressed: (int index) {
+                    setState(() {
+                      _vacCentrefilters[index] = !_vacCentrefilters[index];
+                      applyFilter();
+                    });
+                  },
+                  isSelected: _vacCentrefilters
+                )
             ),
             TabBar(
               controller: _tabController,
-              indicator: BoxDecoration(color: Colors.blue[300]),
+              indicator: BoxDecoration(color: Colors.lightBlue),
               indicatorColor: Colors.white,
               indicatorSize: TabBarIndicatorSize.tab,
               labelColor: Colors.white,
+              automaticIndicatorColorAdjustment: true,
+              unselectedLabelColor: Colors.black,
               isScrollable: false,
               tabs: [
                 new Container(
@@ -438,8 +450,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
             color: Colors.black,
           ),
           decoration: InputDecoration(
-            fillColor: Colors.yellow,
-            border: InputBorder.none,
+            fillColor: Color.fromRGBO(245,247,251, 1),
+            filled: true,
+            border: new OutlineInputBorder(
+                    borderSide: new BorderSide(color: Color.fromRGBO(233,232,235, .1))),
             contentPadding:
                 EdgeInsets.symmetric(vertical: 10, horizontal: 10),
             isDense: true,
@@ -453,28 +467,32 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin, Automa
       ),
       actions: <Widget>[
         Container(
-          margin: EdgeInsets.only(top: 10.0, bottom: 10.0, right: 15.0),
+          margin: EdgeInsets.only(top: 6.5, bottom: 6.5, right: 15.0),
           child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                        textStyle: TextStyle(fontSize: 11.0),
-                        padding: EdgeInsets.all(0.0),
-                        primary: Colors.blue[700], // background
-                        onPrimary: Colors.white, // foreground
-                      ),
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.resolveWith<Color>(
+                      (Set<MaterialState> states) => Colors.white),
+              backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                (Set<MaterialState> states) {
+                  if (states.contains(MaterialState.pressed))
+                    return Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withOpacity(0.5);
+                  else if (states.contains(MaterialState.disabled))
+                    return Colors.lightBlue[300];
+                  return null; // Use the component's default.
+                },
+              )
+            ),
 	        child: Icon(Icons.search, color: Colors.white),
-	          onPressed: () async {
+	          onPressed: _searchController.text.isNotEmpty ? () async {
               if(_searchController.text.isNotEmpty) {
                 Loader.show(context);
                 await _pullRefresh();
-                setState(() {
-                  isPinEntered = true;
-                });
-              } else {
-                setState(() {
-                  isPinEntered = false;
-                });
+                setState(() {});
               }
-            },
+            } : null,
           ),
         )
       ]

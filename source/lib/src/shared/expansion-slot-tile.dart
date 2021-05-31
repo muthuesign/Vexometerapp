@@ -88,14 +88,15 @@ class _ExpansionSlotTileState extends State<ExpansionSlotTile> with SingleTicker
     return Container(
       height: 100.0,
       padding: EdgeInsets.symmetric(horizontal: 2.0),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [Colors.blue[100], Colors.blue[50]])
-      ),
+      color: Color.fromRGBO(245,247,251, 1),
       child: Card(
         color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomRight: Radius.circular(20.0),
+            topLeft: Radius.circular(10.0)
+            ),
+        ),
         clipBehavior: Clip.hardEdge,
         child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -111,23 +112,15 @@ class _ExpansionSlotTileState extends State<ExpansionSlotTile> with SingleTicker
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        InkWell(child: Text(_vaccineCentre.name, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),),
+                        InkWell(child: Text(_vaccineCentre.name, style: TextStyle(fontWeight: FontWeight.bold, color: Color.fromRGBO(51,51,51, 1)),),
                           onTap: () {
                             
                           }
                         ),
                         InkWell(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(Icons.location_pin, color: Colors.grey, size: 14.0),
-                               Expanded(
-                                child:Text(_vaccineCentre.address ?? _vaccineCentre.block_name, style: TextStyle(fontSize: 11.0, color: Colors.grey),
+                          child: Text(_vaccineCentre.address ?? _vaccineCentre.block_name, style: TextStyle(fontSize: 11.0, color: Colors.grey),
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis),
-                                )
-                            ],),
                           onTap: () {
                             
                           }
@@ -143,7 +136,8 @@ class _ExpansionSlotTileState extends State<ExpansionSlotTile> with SingleTicker
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(_vaccineCentre.fee_type, style: TextStyle(fontSize: 13.0, color: Colors.orange)),
-                          Text("Next Slot on: " + _vaccineCentre.getNextSlotOn(), style: TextStyle(fontSize: 13.0, color: Colors.green))
+                          Text("Next Slot on: " + _vaccineCentre.getNextSlotOn(), style: TextStyle(fontSize: 13.0, 
+                              color: _vaccineCentre.hasNextSlot() ? Colors.green: Colors.blueGrey))
                         ]
                       )
                     ),
@@ -154,11 +148,14 @@ class _ExpansionSlotTileState extends State<ExpansionSlotTile> with SingleTicker
                 height: 100.0,
                 width: 80.0,
                 padding: EdgeInsets.only(bottom: 10.0, top: 15.0),
+                //color: Color.fromRGBO(230,238,255, 1),
                 decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue[100], Colors.blue[100]],
+                    color: Color.fromRGBO(230,238,255, 1),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30.0),
+                      bottomRight: Radius.circular(20.0)
+                    ),
                 ),
-              ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -174,7 +171,7 @@ class _ExpansionSlotTileState extends State<ExpansionSlotTile> with SingleTicker
                       style: ElevatedButton.styleFrom(
                         textStyle: TextStyle(fontSize: 11.0),
                         padding: EdgeInsets.all(0.0),
-                        primary: Colors.blue[700], // background
+                        primary: Colors.lightBlue[700], // background
                         onPrimary: Colors.white, // foreground
                       ),
                       onPressed: () async { 
@@ -187,6 +184,7 @@ class _ExpansionSlotTileState extends State<ExpansionSlotTile> with SingleTicker
                           //Notify call
                           _vaccineCentre.isSubcribed = !_vaccineCentre.isSubcribed;
                           await widget.callBack(_vaccineCentre.center_id, _vaccineCentre.isSubcribed);
+                          setState(() {});
                         }
                       },
                       child: Text(_vaccineCentre.getSlots() > 0 ? 'Book Now': (!_vaccineCentre.isSubcribed ? 'Notify Me': "Unsubscribe")),
@@ -203,12 +201,7 @@ class _ExpansionSlotTileState extends State<ExpansionSlotTile> with SingleTicker
   Widget _buildChildren() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 6.0),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [Colors.blue[100], Colors.blue[50]])
-      ),
+      color: Color.fromRGBO(245,247,251, 1),
       child: ListView.separated(
              padding: EdgeInsets.all(0.0),
              shrinkWrap: true,
@@ -217,37 +210,40 @@ class _ExpansionSlotTileState extends State<ExpansionSlotTile> with SingleTicker
                 if (index == 0)
                 {
                   return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [Colors.blue[100], Colors.blue[100]])
-                    ),
+                    color: Color.fromRGBO(245,247,251, 1),
                     height: 30,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Container(padding: EdgeInsets.all(2.0), width: 75.0, child:Text("Date", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0))),
-                        Container(padding: EdgeInsets.all(2.0), width: 35.0, child:Text("Age", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0))),
-                        Container(padding: EdgeInsets.all(2.0), width: 80.0, child:Text("Vaccine", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0))),
-                        Container(padding: EdgeInsets.all(2.0), width: 40.0, child:Text("Slots", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0)))
+                        Container(padding: EdgeInsets.all(2.0), width: 70.0, child:Text("Date", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.0))),
+                        Container(padding: EdgeInsets.all(2.0), width: 28.0, child:Text("Age", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.0))),
+                        Container(padding: EdgeInsets.all(2.0), width: 80.0, child:Text("Vaccine", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.0))),
+                        Container(padding: EdgeInsets.all(2.0), width: 40.0, child:Text("Dose\n1 & 2", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.0))),
                       ],
                     )
                   );
                 }
                 index -= 1;
                 return Container(
-                    color: Colors.blue[50],
+                    color: index % 2 == 0 ? Colors.white : null,
                     height: 30,
                     child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Container(padding: EdgeInsets.all(2.0), width: 75.0, child:Text(_vaccineCentre.sessions[index].date, style: TextStyle(fontSize: 12.0))),
+                      Container(padding: EdgeInsets.all(2.0), width: 75.0, child:GestureDetector(
+                          child: Text(_vaccineCentre.sessions[index].date, style: TextStyle(fontSize: 12.0, 
+                          color: _vaccineCentre.sessions[index].hasSlots() ? Colors.lightBlue[400]: Colors.black)),
+                          onTapDown: _vaccineCentre.sessions[index].hasSlots() ? (TapDownDetails details) {
+                            _showSlots(details.globalPosition, _vaccineCentre.sessions[index].slots);
+                          } : null
+                        )
+                      ),
                       Container(padding: EdgeInsets.all(2.0), width: 35.0, child:Text(_vaccineCentre.sessions[index].min_age_limit.toString(), style: TextStyle(fontSize: 12.0))),
                       Container(padding: EdgeInsets.all(2.0), width: 80.0, child:Text(_vaccineCentre.sessions[index].vaccine, style: TextStyle(fontSize: 12.0))),
-                      Container(padding: EdgeInsets.all(2.0), width: 40.0, child:Text(_vaccineCentre.sessions[index].available_capacity.toString(), textAlign: TextAlign.right, style: TextStyle(fontSize: 12.0)))
+                      Container(padding: EdgeInsets.all(2.0), width: 40.0, child:Text(_vaccineCentre.sessions[index].available_capacity_dose1.toString() 
+                      + " & " + _vaccineCentre.sessions[index].available_capacity_dose2.toString(), textAlign: TextAlign.center, style: TextStyle(fontSize: 12.0)))
                     ],
                   ));
                 },
@@ -258,14 +254,28 @@ class _ExpansionSlotTileState extends State<ExpansionSlotTile> with SingleTicker
     );
   }
 
+  void _showSlots(Offset offset, List<String> slots) async {
+    double left = offset.dx;
+    double top = offset.dy;
+    await showMenu(
+      context: context,
+      color: Color.fromRGBO(245,247,251, 1),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(5.0))
+      ),
+      position: RelativeRect.fromLTRB(left, top - 10, left+1, top+1),
+      items: List.generate(slots.length, (index) => PopupMenuItem<bool>(
+        height: 20.0,
+        textStyle: TextStyle(fontSize: 12.0, color: Colors.black),
+        child: Text(slots[index]))),
+      elevation: 1.0,
+    );
+  }
+
   Widget _buildTile(BuildContext context, Widget child) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.transparent,
-        // border: Border(
-        //   top: BorderSide(color: borderSideColor),
-        //   bottom: BorderSide(color: borderSideColor),
-        // ),
+        color: Colors.transparent
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

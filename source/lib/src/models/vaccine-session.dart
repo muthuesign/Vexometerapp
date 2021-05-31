@@ -22,10 +22,5 @@ class VaccineSession {
         slots = json["slots"] != null ? new List<String>.from(json["slots"]) : null;
 
 
-  // Map<String, dynamic> toMap() => {
-  //   'date': this.date, 
-  //   'currentAvailableCapacity': this.currentAvailableCapacity, 
-  //   'ageLimit': ageLimit,
-  //   'vaccine': this.vaccine
-  // };
+  bool hasSlots() => slots != null && slots.isNotEmpty;
 }
